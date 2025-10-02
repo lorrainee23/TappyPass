@@ -62,11 +62,6 @@
             <ion-label color="danger">Logout</ion-label>
           </ion-item>
         </ion-list>
-
-        <div class="app-info">
-          <p>TappyPass v1.0.0</p>
-          <p>Bus Booking System</p>
-        </div>
       </div>
     </ion-content>
   </ion-page>
