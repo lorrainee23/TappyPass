@@ -1,0 +1,7 @@
+{
+  "name": "TappyPass-mobile",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue-vite"
+}
