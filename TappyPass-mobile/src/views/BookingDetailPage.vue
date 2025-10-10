@@ -3,18 +3,21 @@
     <ion-header>
       <ion-toolbar>
         <ion-buttons slot="start">
-          <ion-back-button default-href="/tabs/bookings"></ion-back-button>
         </ion-buttons>
         <ion-title>Booking Details</ion-title>
       </ion-toolbar>
     </ion-header>
 
-    <ion-content :fullscreen="true">
+    <ion-content :fullscreen="true" class="ion-padding">
+      <ion-refresher slot="fixed" @ionRefresh="handleRefresh($event)">
+        <ion-refresher-content></ion-refresher-content>
+      </ion-refresher>
+      
       <div v-if="loading" class="loading-container">
         <ion-spinner name="crescent"></ion-spinner>
       </div>
 
-      <div v-else-if="booking" class="ion-padding">
+      <div v-else-if="booking" class="booking-detail">
         <div class="status-banner" :class="booking.status">
           <ion-icon :icon="getStatusIcon(booking.status)" class="status-icon"></ion-icon>
           <div>
@@ -104,9 +107,33 @@
         <ion-card v-if="booking.transaction?.receipt_image">
           <ion-card-header>
             <ion-card-title>Payment Receipt</ion-card-title>
+            <ion-card-subtitle v-if="booking.transaction.payment_status === 'rejected'">
+              Payment was rejected. Please upload a new receipt.
+            </ion-card-subtitle>
           </ion-card-header>
           <ion-card-content>
             <img :src="getReceiptUrl(booking.transaction.receipt_image)" alt="Receipt" class="receipt-image" />
+            
+            <!-- Re-upload button for rejected payments -->
+            <div v-if="booking.transaction.payment_status === 'rejected' && booking.status !== 'cancelled'">
+              <input
+                ref="fileInput"
+                type="file"
+                accept="image/*"
+                @change="handleFileSelect"
+                style="display: none"
+              />
+              <ion-button expand="block" @click="triggerFileInput" :disabled="uploading" class="reupload-btn">
+                <ion-spinner v-if="uploading" name="crescent"></ion-spinner>
+                <span v-else>
+                  <ion-icon :icon="cloudUploadOutline" slot="start"></ion-icon>
+                  Upload New Receipt
+                </span>
+              </ion-button>
+              <p class="rejection-info" v-if="booking.transaction.rejection_count">
+                Attempt {{ booking.transaction.rejection_count }} of 3
+              </p>
+            </div>
           </ion-card-content>
         </ion-card>
 
@@ -151,6 +178,8 @@ import {
   IonIcon,
   IonButton,
   IonSpinner,
+  IonRefresher,
+  IonRefresherContent,
   alertController,
   toastController,
 } from '@ionic/vue';
@@ -160,13 +189,16 @@ import {
   timeOutline,
   closeCircleOutline,
   alertCircleOutline,
+  cloudUploadOutline,
 } from 'ionicons/icons';
 import { bookingService, Booking } from '@/services/booking';
 
 const route = useRoute();
 const router = useRouter();
 const loading = ref(true);
+const uploading = ref(false);
 const booking = ref<Booking | null>(null);
+const fileInput = ref<HTMLInputElement | null>(null);
 
 const loadBooking = async () => {
   try {
@@ -177,6 +209,11 @@ const loadBooking = async () => {
   } finally {
     loading.value = false;
   }
+};
+
+const handleRefresh = async (event: any) => {
+  await loadBooking();
+  event.target.complete();
 };
 
 const formatDate = (date: string) => {
@@ -243,6 +280,76 @@ const getQrCodeUrl = (path: string) => {
 
 const getReceiptUrl = (path: string) => {
   return `http://localhost:8000/storage/${path}`;
+};
+
+const triggerFileInput = () => {
+  fileInput.value?.click();
+};
+
+const handleFileSelect = async (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+  
+  if (!file) return;
+  
+  // Validate file type
+  if (!file.type.startsWith('image/')) {
+    const toast = await toastController.create({
+      message: 'Please select an image file',
+      duration: 3000,
+      color: 'danger',
+      position: 'top',
+    });
+    await toast.present();
+    return;
+  }
+  
+  // Validate file size (max 2MB)
+  if (file.size > 2 * 1024 * 1024) {
+    const toast = await toastController.create({
+      message: 'Image size must be less than 2MB',
+      duration: 3000,
+      color: 'danger',
+      position: 'top',
+    });
+    await toast.present();
+    return;
+  }
+  
+  await uploadReceipt(file);
+};
+
+const uploadReceipt = async (file: File) => {
+  uploading.value = true;
+  try {
+    const id = parseInt(route.params.id as string);
+    await bookingService.uploadReceipt(id, file);
+    
+    const toast = await toastController.create({
+      message: 'Receipt uploaded successfully! Waiting for admin verification.',
+      duration: 3000,
+      color: 'success',
+      position: 'top',
+    });
+    await toast.present();
+    
+    // Reload booking to show updated receipt
+    await loadBooking();
+  } catch (error: any) {
+    const toast = await toastController.create({
+      message: error.response?.data?.message || 'Failed to upload receipt',
+      duration: 3000,
+      color: 'danger',
+      position: 'top',
+    });
+    await toast.present();
+  } finally {
+    uploading.value = false;
+    // Reset file input
+    if (fileInput.value) {
+      fileInput.value.value = '';
+    }
+  }
 };
 
 const confirmCancel = async () => {
@@ -436,24 +543,22 @@ onMounted(() => {
   width: 100%;
   height: auto;
 }
-
 .receipt-image {
   max-width: 100%;
   height: auto;
   border-radius: 8px;
-}
-
-.actions {
-  margin-top: 24px;
-}
-
-.booking-date {
-  text-align: center;
   margin-top: 24px;
   padding-top: 24px;
   border-top: 1px solid var(--ion-color-light);
   color: var(--ion-color-medium);
   font-size: 14px;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 64px 24px;
 }
 
 .error-state {
@@ -466,5 +571,17 @@ onMounted(() => {
   font-size: 80px;
   color: var(--ion-color-danger);
   margin-bottom: 16px;
+}
+
+.reupload-btn {
+  margin-top: 16px;
+}
+
+.rejection-info {
+  text-align: center;
+  margin-top: 8px;
+  color: var(--ion-color-warning);
+  font-size: 14px;
+  font-weight: 500;
 }
 </style>

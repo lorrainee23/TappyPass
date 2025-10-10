@@ -46,8 +46,16 @@ class BookingController extends Controller
         if (!$transaction || $transaction->payment_status !== 'paid') {
             return back()->with('error', 'Cannot confirm booking. Payment must be verified first.');
         }
+        
+        // Check if enough seats are available
+        if ($booking->route->available_seats < $booking->seats) {
+            return back()->with('error', 'Not enough seats available on this route.');
+        }
 
         $booking->status = 'confirmed';
+        
+        // Decrement available seats from the route
+        $booking->route->decrement('available_seats', $booking->seats);
         
         // Generate QR Code with booking confirmation details
         $qrCodePath = 'qrcodes/' . $booking->booking_number . '.svg';
@@ -88,8 +96,40 @@ class BookingController extends Controller
         if (!$transaction) {
             return back()->with('error', 'Transaction not found.');
         }
+        
+        $oldStatus = $transaction->payment_status;
+        $newStatus = $request->payment_status;
 
-        $transaction->payment_status = $request->payment_status;
+        // Increment rejection count when changing to rejected status
+        // This happens when: pending->rejected OR paid->rejected
+        if ($newStatus === 'rejected' && $oldStatus !== 'rejected') {
+            // Initialize rejection_count if null
+            if ($transaction->rejection_count === null) {
+                $transaction->rejection_count = 0;
+            }
+            $transaction->rejection_count += 1;
+            
+            // Auto-cancel booking after 3 rejections
+            if ($transaction->rejection_count >= 3) {
+                $booking->status = 'cancelled';
+                $booking->save();
+                
+                $transaction->payment_status = $newStatus;
+                $transaction->admin_notes = $request->admin_notes . "\n\n[SYSTEM] Booking automatically cancelled after 3 payment rejections.";
+                $transaction->save();
+                
+                return back()->with('warning', 'Payment rejected. Booking has been automatically cancelled after 3 rejections.');
+            }
+            
+            // Save and show rejection count
+            $transaction->payment_status = $newStatus;
+            $transaction->admin_notes = $request->admin_notes;
+            $transaction->save();
+            
+            return back()->with('success', "Payment rejected. Rejection count: {$transaction->rejection_count}/3");
+        }
+
+        $transaction->payment_status = $newStatus;
         $transaction->admin_notes = $request->admin_notes;
         $transaction->save();
 

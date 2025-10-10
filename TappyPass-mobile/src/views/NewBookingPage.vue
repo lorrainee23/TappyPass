@@ -45,11 +45,14 @@
               <ion-list v-else-if="routes.length > 0">
                 <ion-radio-group v-model="selectedRouteId">
                   <ion-item v-for="route in routes" :key="route.id" lines="full">
-                    <ion-radio :value="route.id" slot="start"></ion-radio>
+                    <ion-radio :value="route.id" slot="start" :disabled="route.available_seats === 0"></ion-radio>
                     <ion-label>
                       <h3>{{ route.from_location }} → {{ route.to_location }}</h3>
                       <p>Departure: {{ formatTime(route.departure_time) }}</p>
                       <p class="text-primary font-bold">₱{{ Number(route.price).toFixed(2) }} per seat</p>
+                      <p :class="route.available_seats > 0 ? 'text-success' : 'text-danger'">
+                        <strong>{{ route.available_seats }}</strong> seats available
+                      </p>
                     </ion-label>
                   </ion-item>
                 </ion-radio-group>
@@ -75,12 +78,15 @@
                 v-model.number="formData.seats"
                 type="number"
                 min="1"
-                max="10"
+                :max="selectedRoute ? selectedRoute.available_seats : 10"
                 label="Number of Seats *"
                 label-placement="floating"
                 required
               ></ion-input>
             </ion-item>
+            <div v-if="selectedRoute && formData.seats > selectedRoute.available_seats" class="error-message">
+              Only {{ selectedRoute.available_seats }} seats available
+            </div>
 
             <div v-if="selectedRouteId && formData.seats" class="amount-preview">
               <p>Total Amount: <strong>₱{{ calculateTotal().toFixed(2) }}</strong></p>
@@ -145,7 +151,7 @@
               <p>Tap to select receipt image</p>
             </div>
 
-            <div v-else class="preview-container">
+            <div v-else-if="previewUrl" class="preview-container">
               <img :src="previewUrl" alt="Receipt Preview" class="receipt-preview" />
               <ion-button expand="block" fill="outline" @click="triggerFileInput">
                 Change Image
@@ -290,6 +296,18 @@ const nextStep = async () => {
       return;
     }
     
+    // Validate seats availability
+    if (selectedRoute.value && formData.value.seats > selectedRoute.value.available_seats) {
+      const toast = await toastController.create({
+        message: `Only ${selectedRoute.value.available_seats} seats available for this route`,
+        duration: 3000,
+        color: 'danger',
+        position: 'top',
+      });
+      await toast.present();
+      return;
+    }
+    
     // Create booking
     try {
       loading.value = true;
@@ -352,7 +370,7 @@ const submitBooking = async () => {
     });
     await toast.present();
 
-    router.push(`/booking/${createdBookingId.value}`);
+    router.push(`/tabs/booking/${createdBookingId.value}`);
   } catch (error: any) {
     const toast = await toastController.create({
       message: error.response?.data?.message || 'Failed to upload receipt',
@@ -544,5 +562,20 @@ onMounted(() => {
 
 .text-gray-500 {
   color: var(--ion-color-medium);
+}
+
+.text-success {
+  color: var(--ion-color-success);
+}
+
+.text-danger {
+  color: var(--ion-color-danger);
+}
+
+.error-message {
+  color: var(--ion-color-danger);
+  font-size: 12px;
+  padding: 8px 16px;
+  margin-top: -8px;
 }
 </style>

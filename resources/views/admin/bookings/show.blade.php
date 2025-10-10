@@ -89,6 +89,9 @@
                             <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">Pending</span>
                         @else
                             <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Rejected</span>
+                            @if($booking->transaction->rejection_count > 0)
+                                <span class="ml-2 text-xs text-gray-600">({{ $booking->transaction->rejection_count }}/3 attempts)</span>
+                            @endif
                         @endif
                     </p>
                 </div>
@@ -109,6 +112,7 @@
             </div>
             @endif
 
+            @if($booking->status !== 'cancelled')
             <form action="{{ route('admin.bookings.payment-status', $booking->id) }}" method="POST" class="mt-4">
                 @csrf
                 <div class="mb-4">
@@ -127,6 +131,11 @@
                     Update Payment Status
                 </button>
             </form>
+            @else
+            <div class="mt-4 p-4 bg-gray-100 rounded">
+                <p class="text-gray-600"><strong>Note:</strong> Cannot update payment status for cancelled bookings.</p>
+            </div>
+            @endif
         </div>
         @endif
     </div>

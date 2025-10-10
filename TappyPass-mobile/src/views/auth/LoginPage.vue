@@ -81,10 +81,11 @@ const handleLogin = async () => {
   loading.value = true;
   try {
     await authService.login(credentials.value);
-    router.push('/tabs/home');
+    // Force reload to refresh user data across all components
+    window.location.href = '/tabs/home';
   } catch (error: any) {
     const toast = await toastController.create({
-      message: error.response?.data?.message || 'Login failed. Please check your credentials.',
+      message: error.response?.data?.message || 'Login failed',
       duration: 3000,
       color: 'danger',
       position: 'top',

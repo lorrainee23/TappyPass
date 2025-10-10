@@ -33,6 +33,14 @@ class BookingController extends Controller
         ]);
 
         $route = \App\Models\Route::findOrFail($request->route_id);
+        
+        // Check if enough seats are available
+        if ($route->available_seats < $request->seats) {
+            return response()->json([
+                'message' => 'Not enough seats available. Only ' . $route->available_seats . ' seats left.'
+            ], 400);
+        }
+        
         $amount = $route->price * $request->seats;
 
         $booking = Booking::create([
@@ -46,6 +54,8 @@ class BookingController extends Controller
             'amount' => $amount,
             'status' => 'pending',
         ]);
+        
+        // Note: Seats will be decremented when admin confirms the booking
 
         // Create transaction
         $transaction = Transaction::create([
@@ -102,6 +112,9 @@ class BookingController extends Controller
         // Store new receipt
         $path = $request->file('receipt')->store('receipts', 'public');
         $transaction->receipt_image = $path;
+        
+        // Reset payment status to pending when re-uploading receipt
+        $transaction->payment_status = 'pending';
         $transaction->save();
 
         return response()->json([
@@ -122,13 +135,17 @@ class BookingController extends Controller
         if ($booking->status === 'confirmed') {
             return response()->json(['message' => 'Cannot cancel confirmed booking'], 400);
         }
+        
+        // Store original status to check if seats need to be restored
+        $wasConfirmed = $booking->status === 'confirmed';
 
         $booking->status = 'cancelled';
         $booking->save();
+        
+        if ($wasConfirmed) {
+            $booking->route->increment('available_seats', $booking->seats);
+        }
 
-        return response()->json([
-            'message' => 'Booking cancelled successfully',
-            'booking' => $booking,
-        ]);
+        return response()->json(['message' => 'Booking cancelled successfully']);
     }
 }

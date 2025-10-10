@@ -133,6 +133,16 @@ const handleRegister = async () => {
   loading.value = true;
   try {
     await authService.register(formData.value);
+    
+    // Clear form
+    formData.value = {
+      name: '',
+      email: '',
+      phone: '',
+      password: '',
+      password_confirmation: '',
+    };
+    
     const toast = await toastController.create({
       message: 'Account created successfully!',
       duration: 2000,
@@ -140,7 +150,9 @@ const handleRegister = async () => {
       position: 'top',
     });
     await toast.present();
-    router.push('/tabs/home');
+    
+    // Force reload to refresh user data across all components
+    window.location.href = '/tabs/home';
   } catch (error: any) {
     const toast = await toastController.create({
       message: error.response?.data?.message || 'Registration failed. Please try again.',

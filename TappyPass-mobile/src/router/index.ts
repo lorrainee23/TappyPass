@@ -43,20 +43,18 @@ const routes: Array<RouteRecordRaw> = [
         path: 'profile',
         name: 'Profile',
         component: () => import('@/views/ProfilePage.vue')
+      },
+      {
+        path: 'new-booking',
+        name: 'NewBooking',
+        component: () => import('@/views/NewBookingPage.vue')
+      },
+      {
+        path: 'booking/:id',
+        name: 'BookingDetail',
+        component: () => import('@/views/BookingDetailPage.vue')
       }
     ]
-  },
-  {
-    path: '/new-booking',
-    name: 'NewBooking',
-    component: () => import('@/views/NewBookingPage.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/booking/:id',
-    name: 'BookingDetail',
-    component: () => import('@/views/BookingDetailPage.vue'),
-    meta: { requiresAuth: true }
   }
 ]
 

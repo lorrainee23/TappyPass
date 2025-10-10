@@ -24,6 +24,7 @@ export interface Transaction {
   payment_method: string;
   receipt_image?: string;
   payment_status: 'pending' | 'paid' | 'rejected';
+  rejection_count?: number;
   admin_notes?: string;
 }
 

@@ -17,6 +17,7 @@ class Transaction extends Model
         'payment_method',
         'receipt_image',
         'payment_status',
+        'rejection_count',
         'admin_notes',
     ];
 

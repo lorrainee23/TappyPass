@@ -21,6 +21,14 @@ class RedirectIfAuthenticated
 
         foreach ($guards as $guard) {
             if (Auth::guard($guard)->check()) {
+                $user = Auth::guard($guard)->user();
+                
+                // Redirect based on user role
+                if ($user && $user->role === 'admin') {
+                    return redirect('/admin/dashboard');
+                }
+                
+                // For regular users, redirect to API (mobile app handles this)
                 return redirect(RouteServiceProvider::HOME);
             }
         }

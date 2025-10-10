@@ -2,14 +2,18 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-title>My Bookings</ion-title>
+        <ion-title>Bookings</ion-title>
       </ion-toolbar>
     </ion-header>
 
     <ion-content :fullscreen="true">
+      <ion-refresher slot="fixed" @ionRefresh="handleRefresh($event)">
+        <ion-refresher-content></ion-refresher-content>
+      </ion-refresher>
+      
       <ion-header collapse="condense">
         <ion-toolbar>
-          <ion-title size="large">My Bookings</ion-title>
+          <ion-title size="large">Bookings</ion-title>
         </ion-toolbar>
       </ion-header>
 
@@ -149,22 +153,21 @@ const loadBookings = async () => {
     console.error('Failed to load bookings:', error);
   }
 };
-
 const handleRefresh = async (event: any) => {
   await loadBookings();
   event.target.complete();
 };
 
 const filterBookings = () => {
-  // Filtering is handled by computed property
+  // Filter is handled by computed property
 };
 
 const viewBooking = (id: number) => {
-  router.push(`/booking/${id}`);
+  router.push(`/tabs/booking/${id}`);
 };
 
 const goToNewBooking = () => {
-  router.push('/new-booking');
+  router.push('/tabs/new-booking');
 };
 
 const formatDate = (date: string) => {

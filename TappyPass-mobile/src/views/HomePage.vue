@@ -7,6 +7,10 @@
     </ion-header>
 
     <ion-content :fullscreen="true">
+      <ion-refresher slot="fixed" @ionRefresh="handleRefresh($event)">
+        <ion-refresher-content></ion-refresher-content>
+      </ion-refresher>
+      
       <ion-header collapse="condense">
         <ion-toolbar>
           <ion-title size="large">Home</ion-title>
@@ -110,6 +114,8 @@ import {
   IonGrid,
   IonRow,
   IonCol,
+  IonRefresher,
+  IonRefresherContent,
 } from '@ionic/vue';
 import {
   busOutline,
@@ -143,16 +149,21 @@ const loadBookings = async () => {
   }
 };
 
+const handleRefresh = async (event: any) => {
+  await loadBookings();
+  event.target.complete();
+};
+
 const goToNewBooking = () => {
-  router.push('/new-booking');
+  router.push('/tabs/new-booking');
 };
 
 const viewBooking = (id: number) => {
-  router.push(`/booking/${id}`);
+  router.push(`/tabs/booking/${id}`);
 };
 
-const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString('en-US', {
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
