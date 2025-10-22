@@ -21,6 +21,7 @@ class Route extends Model
     protected $casts = [
         'price' => 'decimal:2',
         'is_active' => 'boolean',
+        'departure_time' => 'datetime:H:i',
     ];
 
     public function bookings()

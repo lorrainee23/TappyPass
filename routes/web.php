@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\BookingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\PublicBookingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -21,6 +22,9 @@ use App\Http\Controllers\Admin\SettingController;
 Route::get('/', function () {
     return redirect('/admin/login');
 });
+
+// Public booking details route for QR code scanning
+Route::get('/booking/{bookingNumber}', [PublicBookingController::class, 'show'])->name('public.booking.show');
 
 // Admin routes
 Route::prefix('admin')->group(function () {

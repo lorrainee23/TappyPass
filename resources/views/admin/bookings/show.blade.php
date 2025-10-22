@@ -46,7 +46,7 @@
                 </div>
                 <div>
                     <p class="text-sm text-gray-500">Departure Time</p>
-                    <p class="font-semibold">{{ date('h:i A', strtotime($booking->route->departure_time)) }}</p>
+                    <p class="font-semibold">{{ \Carbon\Carbon::parse($booking->route->departure_time)->format('h:i A') }}</p>
                 </div>
                 <div>
                     <p class="text-sm text-gray-500">Travel Date</p>

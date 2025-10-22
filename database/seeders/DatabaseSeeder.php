@@ -12,6 +12,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Clean up old QR codes
+        $this->call(CleanQrCodesSeeder::class);
+        
         // \App\Models\User::factory(10)->create();
 
         // \App\Models\User::factory()->create([

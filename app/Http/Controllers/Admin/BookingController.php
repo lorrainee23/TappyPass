@@ -57,24 +57,15 @@ class BookingController extends Controller
         // Decrement available seats from the route
         $booking->route->decrement('available_seats', $booking->seats);
         
-        // Generate QR Code with booking confirmation details
+        // Generate QR Code with booking details URL
         $qrCodePath = 'qrcodes/' . $booking->booking_number . '.svg';
         
-        // Create a text message for the QR code (using only ASCII characters)
-        $qrContent = "TAPPYPASS BOOKING CONFIRMED\n\n";
-        $qrContent .= "Booking #: " . $booking->booking_number . "\n";
-        $qrContent .= "Passenger: " . $booking->passenger_name . "\n";
-        $qrContent .= "Route: " . $booking->route->from_location . " to " . $booking->route->to_location . "\n";
-        $qrContent .= "Date: " . $booking->travel_date->format('M d, Y') . "\n";
-        $qrContent .= "Time: " . date('h:i A', strtotime($booking->route->departure_time)) . "\n";
-        $qrContent .= "Seats: " . $booking->seats . "\n";
-        $qrContent .= "Amount: PHP " . number_format($booking->amount, 2) . "\n\n";
-        $qrContent .= "STATUS: CONFIRMED\n";
-        $qrContent .= "Show this QR code when boarding.";
+        // Create URL for booking details page (always use current APP_URL)
+        $bookingUrl = config('app.url') . '/booking/' . $booking->booking_number;
         
         $qrCode = QrCode::format('svg')
             ->size(300)
-            ->generate($qrContent);
+            ->generate($bookingUrl);
         
         Storage::disk('public')->put($qrCodePath, $qrCode);
         $booking->qr_code = $qrCodePath;

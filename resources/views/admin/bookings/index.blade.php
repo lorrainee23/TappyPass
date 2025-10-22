@@ -50,7 +50,7 @@
                     <td class="px-6 py-4 text-sm text-gray-700">{{ $booking->user->name }}</td>
                     <td class="px-6 py-4 text-sm text-gray-700">{{ $booking->passenger_name }}</td>
                     <td class="px-6 py-4 text-sm text-gray-700">{{ $booking->route->from_location }} → {{ $booking->route->to_location }}</td>
-                    <td class="px-6 py-4 text-sm text-gray-700">{{ $booking->travel_date->format('M d, Y') }} {{ date('h:i A', strtotime($booking->route->departure_time)) }}</td>
+                    <td class="px-6 py-4 text-sm text-gray-700">{{ $booking->travel_date->format('M d, Y') }} {{ \Carbon\Carbon::parse($booking->route->departure_time)->format('h:i A') }}</td>
                     <td class="px-6 py-4 text-sm text-gray-700">{{ $booking->seats }}</td>
                     <td class="px-6 py-4 text-sm text-gray-700">₱{{ number_format($booking->amount, 2) }}</td>
                     <td class="px-6 py-4 text-sm">
